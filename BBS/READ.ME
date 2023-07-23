@@ -1,0 +1,9 @@
+The BBS virus can be assembled with TASM or MASM. A86 is pretty brain-dead
+here because it can't understand instructions of the form
+
+                OFFSET X - OFFSET Y
+
+The BBS.ASM file has include statements for FATMAN.ASM, INT13H.ASM and BOOT.ASM
+so those have to be in the same directory as BBS.ASM when you assemble. The
+result is a COM file loader that will put the virus on a floppy in A:.
+

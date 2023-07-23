@@ -1,0 +1,822 @@
+BIOS/DOS ISR Reference
+
+All BIOS and DOS calls which are used in this book are documented 
+here. No attempt is made at an exhaustive list, since such information 
+has been published abundantly in a variety of sources. See <MI>PC 
+Interrupts by Ralf Brown and Jim Kyle, for more complete interrupt 
+information. 
+
+Interrupt 10H: BIOS Video Services
+==================================
+
+Function 0: Set Video Mode
+--------------------------
+
+Registers:              ah = 0
+                        al = Desired video mode
+
+Returns:                None
+
+This function sets the video mode to the mode number requested in the 
+al register. 
+
+Function 0E Hex: Write TTY to Active Page
+-----------------------------------------
+
+Registers:              ah = 0EH
+                        al = Character to display
+                        bl = Forground color, in graphics modes
+
+Returns:                None
+
+This function displays the character in al on the screen at the 
+current cursor location and advances the cursor by one position. It 
+interprets al=0DH as a carriage return, al=0AH as a line feed, al=08 
+as a backspace, and al=07 as a bell. When used in a graphics mode, bl 
+is made the foreground color. In text modes, the character attribute 
+is left unchanged. 
+
+Function 0FH: Get Video Mode
+----------------------------
+
+Registers:              ah = 0FH
+
+Returns:                al = Video mode
+
+This function gets the current video mode and returns it in al. 
+
+
+Interrupt 13H: BIOS Disk Services
+=================================
+
+Function 0: Reset Disk System
+-----------------------------
+
+Registers:              ah = 0
+
+Returns:                c =  set on error
+
+This function resets the disk system, sending a reset command to the 
+floppy disk controller. 
+
+Function 2: Read Sectors from Disk
+----------------------------------
+
+Registers:              ah = 2
+                        al = Number of sectors to read on same track, head
+                        cl = Sector number to start reading from
+                        ch = Track number to read
+                        dh = Head number to read
+                        dl = Drive number to read
+                        es:bx = Buffer to read sectors into
+
+Returns:                c = set on error
+                        ah = Error code, set as follows (for all int 13H fctns)
+
+                        80 H - Disk drive failed to respond
+                        40 H - Seek operation failed
+                        20 H - Bad NEC controller chip
+                        10 H - Bad CRC on disk read
+                        09 H - 64K DMA boundary crossed
+                        08 H - Bad DMA chip
+                        06 H - Diskette changed
+                        04 H - Sector not found
+                        03 H - Write on write protected disk
+                        02 H - Address mark not found on disk
+                        01 H - Bad command sent to disk i/o
+
+Function 2 reads sectors from the specified disk at a given Track, 
+Head and Sector number into a buffer in RAM. A successful read returns 
+ah=0 and no carry flag. If there is an error, the carry flag is set 
+and ah is used to return an error code. Note that no waiting time for 
+motor startup is allowed, so if this function returns an error, it 
+should be tried up to three times. 
+
+Function 3: Write Sectors to disk
+---------------------------------
+
+Registers:              ah = 3
+                        al = Number of sectors to write on same track, head
+                        cl = Sector number to start writing from
+                        ch = Track number to write
+                        dh = Head number to write
+                        dl = Drive number to write
+                        es:bx = Buffer to write sectors from
+
+Returns:                c = set on error
+                        ah = Error code (as above)
+
+This function works just like the read, except sectors are written to 
+disk from the specified buffer 
+
+Function 5: Format Sectors
+--------------------------
+
+Registers:              ah = 5
+                        al = Number of sectors to format on this track, head
+                        cl = Not used
+                        ch = Track number to format
+                        dh = Head number to format
+                        dl = Drive number to format
+                        es:bx = Buffer for special format information
+
+Returns:                c = set on error
+                        ah = Error code (as above)
+
+The buffer at es:bx should contain 4 bytes for each sector to be 
+formatted on the disk. These are the address fields which the disk 
+controller uses to locate the sectors during read/write operations. 
+The four bytes should be organized as C,H,R,N;C,H,R,N, etc., where 
+C=Track number, H=Head number, R=Sector number, N=Bytes per sector, 
+where 0=128, 1=256, 2=512, 3=1024. 
+
+Function 8: Get Disk Parameters
+-------------------------------
+
+Registers:              ah = 8
+                        dl = Drive number
+
+Returns:                c = Set on error
+                        ah = 0 if successful, else error code
+                        ch = Low 8 bits of maximum cylinder number
+                        cl = Maximum sector number + hi cylinder no.
+                        dh = Maximum head number
+                        dl = Number of drives in system
+                        es:di = Address of drive parameter table (floppies)
+
+
+Interrupt 1AH: BIOS Time of Day Services
+========================================
+
+Function 0: Read Current Clock Setting
+--------------------------------------
+
+Registers:              ah = 0
+
+Returns:                cx = High portion of clock count
+                        dx = Low portion of clock count
+                        al = 0 if timer has not passed 24 hour count
+                        al = 1 if timer has passed 24 hour count
+
+The clock count returned by this function is the number of timer ticks 
+since midnight. A tick occurrs every 1193180/65536 of a second, or 
+about 18.2 times a second. (See also Interrupt 21H, Function 2CH.) 
+
+
+Interrupt 20H: DOS Terminate
+============================
+
+Registers:              None
+
+Returns:                Does not return
+
+This interrupt terminates the current program and returns control to 
+the parent. It does not close any files opened by the process being 
+terminated. It is identical to Interrupt 21H, Function 0. Interrupt 
+21H, Function 4CH is, however, more popular today because it allows 
+the process to return a termination code to the parent. 
+
+
+Interrupt 21H: DOS Services
+===========================
+
+Function 9: Print String to Standard Output
+-------------------------------------------
+
+Registers:              ah = 9
+                        ds:dx = Pointer to string to print
+
+Returns:                None
+
+The character string at ds:dx is printed to the standard output device 
+(which is usually the screen). The string must be terminated by a "$" 
+character, and may contain carriage returns, line feeds, etc. 
+
+Function 11H: FCB-Based Find First
+----------------------------------
+
+Registers:              ah = 11H
+                        ds:dx points to FCB with file name to be searched for
+
+Returns:                al = 0 if successful, 0FFH if not
+
+The file name in the FCB used for the search can contain the wildcards 
+"*" and "?", and it can include an FCB extension to search for files 
+with specific attributes. This FCB must be left alone between calls to 
+Function 11H and subsequent calls to Function 12H, because DOS uses 
+data stored there for subsequent searches. The DTA will be set up with 
+an FCB which contains the file name for an actual file found by the 
+search. If the FCB at ds:dx had an extension, the FCB returned in the 
+DTA will too. 
+
+Function 12H: FCB-Based Find Next
+---------------------------------
+
+Registers:              ah = 11H
+                        ds:dx points to FCB with file name to be searched for
+
+Returns:                al = 0 if successful, 0FFH if not
+
+This function works just like Function 11H, except it expects you to 
+have already called Function 11H once. Typically, in searching for 
+files, one calls Function 11H once, and then repeatedly calls Function 
+12H until al is returned non-zero. 
+
+Function 1AH: Set Disk Transfer Area Address
+--------------------------------------------
+
+Registers:              ah = 1AH
+                        ds:dx = New disk transfer area address
+
+Returns:                None
+
+This function sets the Disk Transfer Area (DTA) address to the value 
+given in ds:dx. It is meaningful only within the context of a given 
+program. When the program is terminated, etc., its DTA goes away with 
+it. The default DTA is at offset 80H in the Program Segment Prefix 
+(PSP). 
+
+Function 26H: Create Program Segment Prefix
+
+Registers:              ah = 26H
+                        dx = Segment for new PSP
+
+Returns:                c set if call failed
+
+This copies the current program's PSP to the specified segment, and 
+updates it with new information to create a new process. Typically, it 
+is used to load a separate COM file for execution as an overlay. 
+
+Function 2AH: Get System Date
+-----------------------------
+
+Registers:              ah = 2AH
+
+Returns:                dh = Month number (1 to 12)
+                        dl = Day of month (1 to 31)
+                        cx = Year (1980 to 2099)
+                        al = Day of week (0 through 6)
+
+Function 2BH: Set System Date
+-----------------------------
+
+Registers:              ah = 2BH
+                        dh = Month number
+                        dl = Day of month
+                        cx = Year
+
+Returns:                al = 0 if successful, 0FFH if invalid date
+
+This function works as the complement to Function 2AH.
+
+Function 2CH: Get System Time
+-----------------------------
+
+Registers:              ah = 2CH
+
+Returns:                ch = Hour (0 through 23)
+                        cl = Minutes (0 through 59)
+                        dh = Seconds (0 through 59)
+                        dl = Hundredths of a second (0 through 99)
+
+Function 2DH: Set System Time
+-----------------------------
+
+Registers:              ah = 2CH
+                        ch = Hour (0 through 23)
+                        cl = Minutes (0 through 59)
+                        dh = Seconds (0 through 59)
+                        dl = Hundredths of a second (0 through 99)
+
+Returns:                al = 0 if successful, 0FFH if invalid time
+
+Function 2FH: Read Disk Transfer Area Address
+---------------------------------------------
+
+Registers:              ah = 2FH
+
+Returns:                es:bx = Pointer to the current DTA
+
+This is the complement of function 1A. It reads the Disk Transfer Area 
+address into the register pair es:bx. 
+
+Function 31H: Terminate and Stay Resident
+-----------------------------------------
+
+Registers:              ah = 31H
+                        al = Exit code
+                        dx = Memory size to keep, in paragraphs
+
+Returns:                (Does not return)
+
+Function 31H causes a program to become memory resident, remaining in 
+memory and returning control to DOS. The exit code in al should be set 
+to zero if the program is terminating successfully, and something else 
+(programmer defined) to indicate that an error occurred. The register 
+dx must contain the number of 16 byte paragraphs of memory that DOS 
+should leave in memory when the program terminates. For example, if 
+one wants to leave a 367 byte COM file in memory, one must save 
+367+256 bytes, or 39 paragraphs. (That doesn't leave room for a stack, 
+either.) 
+
+Function 36H: Get Disk Space Free Information
+---------------------------------------------
+
+Registers:              ah = 36H
+                        dl = Drive no. (0=Default, 1=A, 2=B, 3=C . . . )
+
+Returns:                ax = 0FFFFH if invalid drive no., else secs/cluster
+                        cx = Bytes per sector
+                        bx = Number of free clusters
+                        dx = Total number of clusters
+
+Function 38H: Get Country Information
+-------------------------------------
+
+Registers:              ah = 38H
+                        al = 0 to get standard country information
+                           = Country code to get other country inforomation
+                        al = 0FFH and bx = country code if c. code >> 254
+                        ds:dx points to a 32-byte data area to be filled in
+
+Returns:                c set if country code is invalid
+                        bx = Country code
+                        32-byte data area filled in
+
+The country codes used by DOS are the same as the country codes used 
+to place international telephone calls. The 32-byte data area takes 
+the following format: 
+
+Offset       Size    Description
+0             2       Date and time code
+2             5       Currency symbol string (ASCIIZ)
+7             2       Thousands separator (ASCIIZ)
+9             2       Decimal separator (ASCIIZ)
+11            2       Date separator (ASCIIZ)
+13            2       Time separator (ASCIIZ)
+15            1       Currency symbol location (0=before, 1=after)
+16            1       Currency decimal places
+17            1       Time Format (1=24 hr, 0=12 hr clock)
+18            4       Upper/lower case map call address
+22            2       List separator string (ASCIIZ)
+24            8       Reserved
+
+Function 3BH: Change Directory
+------------------------------
+
+Registers:              ah = 3BH
+                        ds:dx points to ASCIIZ directory name
+
+Returns:                al = 0 if successful
+
+The string passed to this function may contain a drive letter. 
+
+Function 3CH: Create File
+-------------------------
+
+Registers:              ah = 3CH
+                        cl = Attribute of file to create
+                        ds:dx points to ASCIIZ file name
+
+Returns:                c set if the call failed
+                        ax = File handle if successful, else error code
+
+This function creates the file if it does not exist. If the file does 
+exist, this function opens it but truncates it to zero length. 
+
+Function 3DH: Open File
+-----------------------
+
+Registers:              ah = 3DH
+                        ds:dx = Pointer to an ASCIIZ path/file name
+                        al = Open mode
+
+Returns:                c = set if open failed
+                        ax = File handle, if open was successful
+                        ax = Error code, if open failed
+
+This function opens the file specified by the null terminated string 
+at ds:dx, which may include a specific path. The value in al is broken 
+out as follows: 
+
+        Bit 7: Inheritance flag, I.
+                I=0 means the file is inherited by child processes
+                I=1 means it is private to the current process.
+
+        Bits 4-6: Sharing mode, S.
+                S=0 is compatibility mode
+                S=1 is exclusive mode
+                S=2 is deny write mode
+                S=3 is deny read mode
+                S=4 is deny none mode.
+
+        Bit 3: Reserved, should be 0
+
+        Bit 0-2: Access mode, A.
+                A=0 is read mode
+                A=1 is write mode
+                A=2 is read/write mode
+
+In this book we are only concerned with the access mode. For more 
+information on sharing, etc., see IBM's Disk Operating System 
+Technical Reference or one of the other books cited in the references. 
+The file handle returned by DOS when the open is successful may be any 
+16 bit number. It is unique to the file just opened, and used by all 
+subsequent file operations to reference the file. 
+
+Function 3EH: Close File
+------------------------
+
+Registers:              ah = 3EH
+                        bx = File handle of file to close
+
+Returns:                c = set if an error occurs closing the file
+                        ax = Error code in the event of an error
+
+This closes a file opened by Function 3DH, simply by passing the file 
+handle to DOS. 
+
+Function 3FH: Read from a File
+------------------------------
+
+Registers:              ah = 3FH
+                        bx = File handle
+                        cx = Number of bytes to read
+                        ds:dx = Pointer to buffer to put file data in
+
+Returns:                c = set if an error occurs
+                        ax = Number of bytes read, if read is successful
+                        ax = Error code in the event of an error
+
+Function 3F reads cx bytes from the file referenced by handle bx into 
+the buffer ds:dx. The data is read from the file starting at the 
+current file pointer. The file pointer is initialized to zero when the 
+file is opened, and updated every time a read or write is performed. 
+
+Function 40H: Write to a File
+-----------------------------
+
+Registers:              ah = 40H
+                        bx = File handle
+                        cx = Number of bytes to write
+                        ds:dx = Pointer to buffer to get file data from
+
+Returns:                c = set if an error occurs
+                        ax = Number of bytes written, if write is successful
+                        ax = Error code in the event of an error
+
+Function 40H writes cx bytes to the file referenced by handle bx from 
+the buffer ds:dx. The data is written to the file starting at the 
+current file pointer. 
+
+Function 41H: Delete File
+-------------------------
+
+Registers:              ah = 41H
+                        ds:dx = Pointer to ASCIIZ string of path/file to delete
+
+Returns:                c = set if an error occurs
+                        ax = Error code in the event of an error
+
+This function deletes a file from disk, as specified by the path and 
+file name in the null terminated string at ds:dx. 
+
+Function 42H: Move File Pointer
+-------------------------------
+
+Registers:              ah = 42H
+                        al = Method of moving the pointer
+                        bx = File handle
+                        cx:dx = Distance to move the pointer, in bytes
+
+Returns:                c = set if there is an error
+                        ax = Error code if there is an error
+                        dx:ax = New file pointer value, if no error
+
+Function 42H moves the file pointer in preparation for a read or write 
+operation. The number in cx:dx is a 32 bit unsigned integer. The 
+methods of moving the pointer are as follows: al=0 moves the pointer 
+relative to the beginning of the file, al=1 moves the pointer relative 
+to the current location, al=2 moves the pointer relative to the end of 
+the file. 
+
+Function 43H: Get and Set File Attributes
+-----------------------------------------
+
+Registers:              ah = 43H
+                        al = 0 to get attributes, 1 to set them
+                        cl = File attributes, for set function
+                        ds:dx = Pointer to an ASCIIZ path/file name
+
+Returns:                c = set if an error occurs
+                        ax = Error code when an error occurs
+                        cl = File attribute, for get function
+
+The file should not be open when you get/set attributes. The bits in 
+cl correspond to the following attributes: 
+
+        Bit 0 - Read Only attribute
+        Bit 1 - Hidden attrubute
+        Bit 2 - System attribute
+        Bit 3 - Volume Label attribute
+        Bit 4 - Subdirectory attribute
+        Bit 5 - Archive attribute
+        Bit 6 and 7 - Not used
+
+Function 47H: Get Current Directory
+-----------------------------------
+
+Registers:              ah = 47H
+                        dl = Drive number, 0=Default, 1=A, 2=B, etc.
+                        ds:si = Pointer to buffer to put directory path name in
+
+Returns:                c = set if an error occurs
+                        ax = Error code when an error occurs
+
+The path name is stored in the data area at ds:si as an ASCIIZ null 
+terminated string. This string may be up to 64 bytes long, so one 
+should normally allocate that much space for this buffer. 
+
+Function 48H: Allocate Memory
+-----------------------------
+
+Registers:              ah = 48H
+                        bx = Number of 16-byte paragraphs to allocate
+
+Returns:                c set if call failed
+                        ax = Segment of allocated memory
+                        bx = Largest block available, if function fails
+
+This function is the standard way a program allocates memory because 
+of itself. It essentially claims a memory control block for a specific 
+program. 
+
+Function 49H: Free Allocated Memory
+-----------------------------------
+
+Registers:              ah = 49H
+                        es = Segment of block being returned to DOS
+
+Returns:                al = 0 if successful
+
+This function frees memory allocated by Function 48H, and returns it 
+to DOS. The es register should be set to the same value returned in ax 
+by Function 48H. 
+
+Function 4AH: Modify Allocated Memory Block
+-------------------------------------------
+
+Registers:              ah = 4AH
+                        es = Block of memory to be modified
+                        bx = Requested new size of block in paragraphs
+
+Return:                 c set if call failed
+                        al = Error code, if call fails
+                        bx = Largest available block, if call fails
+
+Function 4BH: DOS EXEC
+----------------------
+
+Registers:              ah = 4BH
+                        al = Subfunction code (0, 1 or 3), see below
+                        ds:dx points to ASCIIZ name of program to exec
+                        es:bx points to a parameter block for the exec
+
+Returns:                c set if an error
+
+This function is used to load, and optionally execute programs. If 
+subfunction 0 is used, the specified program will be loaded and 
+executed. If subfunction 1 is used, the program will be loaded and set 
+up with its own PSP, but it will not be executed. If subfunction 3 is 
+used, the program is loaded into memory allocated by the caller. 
+Subfunction 3 is normally used to load overlays. DOS allocates the 
+memory for subfunctions 0 and 1, however it is the caller's 
+responsibility to make sure that enough memory is available to load 
+and execute the program. The EXEC parameter block takes the following 
+form, for Subfunction 0 and 1: 
+
+Offset       Size    Description
+
+0             2       Segment of environment to be used for child
+2             4       Pointer to command tail for child (typically PSP:80)
+6             4       Pointer to first FCB for child (typically PSP:5C)
+10            4       Pointer to second FCB for child (typically PSP:6C)
+14            4       Child's initial ss:sp, placed here on return from subf. 1
+18            4       Child's initial cs:ip, on return from subfunction 1
+
+Subfunction 0 does not require the last two fields. For Subfunction 3, 
+the parameter block takes this form: 
+
+Offset       Size     Description
+0             2       Segment at which to load code
+2             2       Relocation factor to apply in relocating segments
+
+Function 4CH: Terminate Program
+-------------------------------
+
+Registers:              ah = 4CH
+                        al = Return code
+
+Returns:                (Does not return)
+
+This function closes all open files and returns control to the parent, 
+freeing all memory used by the program. The return code should be zero 
+if the program is terminating successfully. (This is the error level 
+used in batch files, etc.) This function is the way most programs 
+terminate and return control to DOS. 
+
+Function 4EH: Find First File Search
+------------------------------------
+
+Registers:              ah = 4EH
+                        cl = File attribute to use in the search
+                        ds:dx = Pointer to an ASCIIZ path/file name
+
+Returns:                ax = Error code when an error occurs, or 0 if no error
+
+The ASCIIZ string at ds:dx may contain the wildcards * and ?. For 
+example, "c:\dos\*.com" would be a valid string. This function will 
+return with an error if it cannot find a file. No errors indicate that 
+the search was successful. When successful, DOS formats a 43 byte 
+block of data in the current DTA which is used both to identify the 
+file found, and to pass to the Find Next function, to tell it where to 
+continue the search from. The data in the DTA is formatted as follows: 
+
+Byte    Size    Description
+0       21      Reserved for DOS Find Next
+21      1       Attribute of file found
+22      2       Time on file found
+24      2       Date on file found
+26      4       Size of file found, in bytes
+30      13      File name of file found
+
+The attribute is used in a strange way for this function. If any of 
+the Hidden, System, or Directory attributes are set when Find Next is 
+called, DOS will search for any normal file, as well as any with the 
+specified attributes. Archive and Read Only attributes are ignored by 
+the search altogether. If the Volume Label attribute is specified, the 
+search will look only for files with that attribute set. 
+
+Function 4FH: Find Next File Search
+-----------------------------------
+
+Registers:              ah = 4FH
+
+Returns:                ax = 0 if successful, otherwise an error code
+
+This function continues the search begun by Function 4E. It relies on 
+the information in the DTA, which should not be disturbed between one 
+call and the next. This function also modifies the DTA data block to 
+reflect the next file found. In programming, one often uses this 
+function in a loop until ax=18, indicating the normal end of the 
+search. 
+
+Function 52H: Locate List of Lists
+----------------------------------
+
+Registers:              ah = 52H
+
+Returns:                es:bx points to List of Lists
+
+This DOS function is undocumented, however quite useful for getting at 
+the internal DOS data structures - and thus quite useful for viruses. 
+Since the List of Lists is officially undocumented, it does change 
+from version to version of DOS. The following data fields seem to be 
+fairly constant for DOS 3.1 and up: 
+
+Offset  Size    Description
+-12     2       Sharing retry count
+-10     2       Sharing retry delay
+-8      4       Pointer to current disk buffer
+-4      2       Pointer in DOS segment to unread CON input
+-2      2       Segment of first memory control block
+0       4       Pointer to first DOS drive parameter block
+4       4       Pointer to list of DOS file tables
+8       4       Pointer to CLOCK$ device driver
+0CH     4       Pointer to CON device driver
+10H     2       Maximum bytes/block of any device
+12H     4       Pointer to disk buffer info
+16H     4       Pointer to array of current directory structures
+1AH     4       Pointer to FCB table
+1EH     2       Number of protected FCBs
+20H     1       Number of block devices
+21H     1       Value of LASTDRIVE from CONFIG.SYS
+22H     18      NUL device driver header
+34H     1       Number of JOINed drives
+
+Many of the pointers in the List of Lists point to data structures all 
+their own. The structures we've used are detailed in the text. For 
+more info on others, see Undocumented DOS by Andrew Schulman et. al. 
+
+Function 56H: Rename a File
+---------------------------
+
+Registers:              ah = 56H
+                        ds:dx points to old file name (ASCIIZ)
+                        es:di points to new file name (ASCIIZ)
+
+Returns:                al=0 if successful
+
+This function can be used not only to rename a file, but to change its 
+directory as well. 
+
+Function 57H: Get/Set File Date and Time
+----------------------------------------
+
+Registers:              ah = 57H
+                        al = 0 to get the date/time
+                        al = 1 to set the date/time
+                        bx = File Handle
+                        cx = 2048*Hour + 32*Minute + Second/2 for set
+                        dx = 512*(Year-1980) + 32*Month + Day for set
+
+Returns:                c = set if an error occurs
+                        ax = Error code in the event of an error
+                        cx = 2048*Hour + 32*Minute + Second/2 for get
+                        dx = 512*(Year-1980) + 32*Month + Day for get
+
+This function gets or sets the date/time information for an open file. 
+This information is normally generated from the system clock date and 
+time when a file is created or modified, but the programmer can use 
+this function to modify the date/time at will. 
+
+
+Interrupt 24H: Critical Error Handler
+=====================================
+
+This interrupt is called by DOS when a critical hardware error occurs. 
+Viruses hook this interrupt and put a dummy routine in place because 
+they can sometimes cause it to be called when it shouldn't be, and 
+they don't want to give their presence away. The most typical use is 
+to make sure the user doesn't learn about attempts to write to write-
+protected diskettes, when they should only be read. 
+
+
+Interrupt 27H: DOS Terminate and Stay Resident
+==============================================
+
+Registers:      dx = Number of bytes to keep resident
+                cs = Segment of PSP
+
+Returns:        (Does not return)
+
+Although this call has been considered obsolete by Microsoft and IBM 
+since DOS 2.0 in favor of Interrupt 21H, Function 31H, it is still 
+supported, and you find viruses that use it. The main reason viruses 
+use it is to save space. Since one doesn't have to load ax and one 
+doesn't have to divide dx by 16, a virus can be made a little more 
+compact by using this interrupt. 
+
+
+Interrupt 2FH: Multiplex Interrupt
+==================================
+
+Function 13H: Set Disk Interrupt Handler
+----------------------------------------
+
+Registers:              ah = 13H
+                        ds:dx = Pointer to interrupt handler disk driver
+                                calls on read/write
+                        es:bx = Address to restore int 13H to on halt
+
+Return:                 ds:dx = value from previous invocation of this
+                        es:bx = value from previous invocation of this
+
+This function allows one to tunnel Interrupt 13H. Interrut 13H may be 
+hooked by many programs, including DOS, but this allows the caller to 
+get back to the vector which the DOS disk device driver calls to 
+access the disk. 
+
+Function 1600H: Check for Windows
+---------------------------------
+
+Registers:              ax = 1600H
+
+Return:                 al = 0 if Windows 3.x enhanced mode not running
+                        al = Windows major version number
+                        ah = Windows minor version number
+
+This is the quickest and most convenient way to determine whether or 
+not Windows is running. 
+
+Function 1605H: Windows Startup
+-------------------------------
+
+This function is broadcast by Windows when it starts up. By hooking 
+it, any program can learn that Windows is starting up. Typically, it 
+is used by programs which might cause trouble when Windows starts to 
+uninstall, or fix the trouble. A virus could also do things to 
+accomodate itself to the Windows environment when it receives this 
+interrupt function. By setting cx=0, an interrupt hook can tell 
+Windows <MI>not to load. Alternatively, this interrupt can be used to 
+tell Windows to load a virtual device driver on the fly. 
+
+
+Interrupt 40H: Floppy Disk Interrupt
+====================================
+
+This interrupt functions just like Interrupt 13H, only it works only 
+for floppy disks. It is normally invoked by the Interrupt 13H handler 
+once that handler decides that the requested activity is for a floppy 
+disk. Viruses sometimes use this interrupt directly. 
+

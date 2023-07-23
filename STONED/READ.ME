@@ -1,0 +1,17 @@
+The MBR.ASM is a basic master boot record. It assembles to a COM file.
+
+STONED.ASM should be assembled to an EXE file. When executed, it will load the
+Stoned virus onto the diskette in the A: drive. Be careful to remove the
+diskette after you load it. If you don't, and you reboot your computer, your
+hard disk will be immediately infected without warning!
+
+MBRREAD and MBRWRITE are utility programs that read or write a file PART.SEC
+into the master boot record. They are useful for examining the contents
+of the master boot record, but be careful: improperly used, they can mess
+up your entire hard disk in a split second.
+
+PART.EXE displays, and optionally modifies the information stored in the
+partition table of the master boot record.
+
+BE VERY CAREFUL USING THESE UTILITIES. It's real easy to ruin your hard disk
+and be unable to get it back once you've done it!

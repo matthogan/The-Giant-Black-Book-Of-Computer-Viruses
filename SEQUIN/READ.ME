@@ -1,0 +1,32 @@
+SEQUIN.ASM can be assembled using TASM, MASM or A86. To play with it in
+Windows 95, try the following ON A COMPUTER THAT YOU CAN MESS UP AND GET
+INFECTED:
+
+Take any old COM file and name it TEST.COM for testing purposes. This is
+the file that TESTSEQ should infect.
+
+First load SEQUIN by running SEQUIN.COM from the DOS prompt. Run TESTSEQ
+from a DOS box in Windows 95. TEST.COM will be unaffected. The int 21H
+instruction was intercepted by Windows 95 and the virus never saw it.
+
+Now, at the C: prompt, type
+
+C:>DEBUG TESTSEQ.COM
+
+You'll get a dash (-) prompt from debug. At this type L<CR> and
+you'll see the instructions in TESTSEQ. The first 3 are what you care about:
+
+        mov     ax,3D02H
+        mov     dx,OFFSET FNAME
+        int     21H
+
+To trace them, just type T<CR> at the dash prompt three times. Now you
+wil be inside the virus code at somewhere about 0000:0254 in memory. The
+rest of the virus will run just fine, so type G<CR> to go at the dash prompt.
+The program will terminate normally. Type Q<CR> at the dash to quit debug.
+Now the TEST.COM program should have increased in size because it is infected.
+
+If you exit Windows 95 (Shut Down/Restart the computer in MS-DOS mode),
+load SEQUIN and then run TESTSEQ from the DOS prompt, TEST.COM will be
+infected immediately, because Windows 95 is no longer grabbing the interrupt
+21H for itself.

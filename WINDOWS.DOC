@@ -1,0 +1,388 @@
+Appendix A: Windows-32 Function Reference
+
+FindFirstFile
+=============
+
+The FindFirstFile function searches a directory for a file
+whose name matches the specified filename.
+
+HANDLE FindFirstFile(
+    LPCTSTR lpFileName,
+    LPWIN32_FIND_DATA lpFindFileData
+   );
+
+Parameters:
+
+lpFileName is a dword pointer to a null-terminated
+string that specifies a valid directory or path and filename, which
+can contain wildcard characters (* and ?). This string must not exceed
+MAX_PATH characters.
+
+lpFindFileData is a dword pointer to the WIN32_FIND_DATA
+structure that receives information about the found file or subdirectory.
+The structure can be used in subsequent calls to the FindNextFile
+or FindClose function to refer to the file or subdirectory.
+
+Return Value: If the function succeeds, the return
+value is a search handle used in a subsequent call to FindNextFile
+or FindClose. If the function fails, the return value is INVALID_HANDLE_VALUE.
+To get extended error information, call GetLastError.
+
+
+FindNextFile
+============
+
+The FindNextFile function continues a file search from a previous
+call to the FindFirstFile function.
+
+BOOL FindNextFile(
+    HANDLE hFindFile,
+    LPWIN32_FIND_DATA lpFindFileData
+   );
+
+Parameters:
+
+hFindFile is a search handle returned by a previous
+call to the FindFirstFile function.
+
+lpFindFileData is a dword pointer which points
+to the WIN32_FIND_DATA structure that receives information about the
+found file or subdirectory. The structure can be used in subsequent
+calls to FindNextFile to refer to the found file or directory.
+
+Return Value: If the function succeeds, the return
+value is TRUE. If the function fails, the return value is FALSE. To
+get extended error information, call GetLastError. If no matching
+files can be found, the GetLastError function returns ERROR_NO_MORE_FILES.
+
+
+FindClose
+=========
+
+The FindClose function closes the specified search handle.
+
+BOOL FindClose(
+    HANDLE hFindFile
+   );
+
+Parameter:
+
+hFindFile is the search handle. This handle must
+have been previously opened by the FindFirstFile function.
+
+Return Value: If the function succeeds, the return
+value is TRUE. If the function fails, the return value is FALSE. To
+get extended error information, call GetLastError.
+
+
+CreateFile
+==========
+
+The CreateFile function creates, opens, or truncates a file,
+pipe, communications resource, disk device, or console. It returns
+a handle that can be used to access the object. It can also open and
+return a handle to a directory.
+
+HANDLE CreateFile(
+    LPCTSTR lpFileName,                          // pointer to name of the file
+    DWORD dwDesiredAccess,                       // access (read-write) mode
+    DWORD dwShareMode,                           // share mode
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,  //security descriptor
+    DWORD dwCreationDistribution,                // how to create
+    DWORD dwFlagsAndAttributes,                  // file attributes
+    HANDLE hTemplateFile                         // handle to file with attributes to copy
+   );
+
+Parameters:
+
+lpFileName is a dword pointer to a null-terminated
+string that specifies the name of the file
+
+dwDesiredAccess specifies the type of access to
+the file or other object. An application can obtain read access, write
+access, read-write access, or device query access. You can use the
+following flag constants to build a value for this parameter. Both
+GENERIC_READ and GENERIC_WRITE must be set to obtain read-write access:
+0       Allows an application to query device attributes without actually
+accessing the device.
+GENERIC_READ      Specifies read access to the file.
+Data can be read from the file and the file pointer can be moved.
+GENERIC_WRITE   Specifies write access to the file. Data can be written
+to the file and the file pointer can be moved.
+
+dwShareMode specifies how this file can be shared.
+This parameter must be some combination of the following values:
+0      Prevents the file from being shared.
+FILE_SHARE_READ     Other open operations can be performed on the
+file for read access. If the CreateFile function is opening the client
+end of a mailslot, this flag is specified.
+FILE_SHARE_WRITE       Other open operations can be performed on the
+file for write access.
+
+lpSecurityAttributes points to a SECURITY_ATTRIBUTES
+structure that specifies the security attributes for the file. The
+file system must support this parameter for it to have an effect.
+
+dwCreationDistribution specifies which action to
+take on files that exist, and which action to take when files do not
+exist. This parameter must be one of the following values:
+CREATE_NEW      Creates a new file. The function fails if the specified
+file already exists.
+CREATE_ALWAYS   Creates a new file. The function overwrites the file if
+it exists.
+OPEN_EXISTING   Opens the file. The function fails if the file does not exist.
+OPEN_ALWAYS     Opens the file, if it exists. If the file does not exist,
+the function creates the file as if dwCreationDistribution were CREATE_NEW.
+TRUNCATE_EXISTING      Opens the file. Once opened, the file is truncated
+so that its size is zero bytes. The calling process must open the file with
+at least GENERIC_WRITE access. The function fails if the file does not exist.
+
+dwFlagsAndAttributes specifies the file attributes
+and flags for the file.
+
+hTemplateFile this value must be null.
+
+Return Value: If the function succeeds, the return
+value is an open handle to the specified file. If the function fails,
+the return value is INVALID_HANDLE_VALUE. To get extended error information,
+call GetLastError.
+
+
+_lclose or CloseFile
+====================
+
+The _lclose function closes the specified file so that it is
+no longer available for reading or writing. CloseFile is the same as _lclose.
+
+HFILE _lclose(
+    HFILE hFile
+   );
+
+Parameters:
+
+hFile is the file handle of the file to be closed.
+This handle is returned by the function that created or last opened
+the file.
+
+Return Value: If the function succeeds, the return
+value is zero. If the function fails, the return value is HFILE_ERROR.
+
+
+SetFilePointer
+==============
+
+The SetFilePointer function moves the file pointer of an open
+file.
+
+DWORD SetFilePointer(
+    HANDLE hFile,
+    LONG lDistanceToMove,
+    PLONG lpDistanceToMoveHigh,
+    DWORD dwMoveMethod
+   );
+
+Parameters:
+
+hFile is a handle for the file whose file pointer is to be moved. The
+file handle must have been created with GENERIC_READ or GENERIC_WRITE
+access to the file.
+
+lDistanceToMove is a dword that specifies the number of bytes to move
+the file pointer. A positive value moves the pointer forward in the
+file and a negative value moves it backward.
+
+lpDistanceToMoveHigh points to the high-order word
+of the 64-bit distance to move. If the value of this parameter is
+NULL, SetFilePointer can operate only on files whose maximum
+size is 2^32 - 2. If this parameter is specified, the maximum
+file size is 2^64 - 2. This parameter also receives the high-order
+word of the new value of the file pointer.
+
+dwMoveMethod specifies the starting point for the
+file pointer move. This parameter can be one of the following values:
+FILE_BEGIN       The starting point is zero or the beginning of the file.
+If FILE_BEGIN is specified, DistanceToMove is interpreted as an unsigned
+location for the new file pointer.
+FILE_CURRENT     The current value of the file pointer is the starting point.
+FILE_END         The current end-of-file position is the starting point.
+
+Return Values: If the SetFilePointer function
+succeeds, the return value is the low-order doubleword of the new
+file pointer, and if lpDistanceToMoveHigh is not NULL, the
+function puts the high-order doubleword of the new file pointer into
+the LONG pointed to by that parameter. If the function fails and lpDistanceToMoveHigh
+is NULL, the return value is 0xFFFFFFFF.
+
+
+ReadFile
+========
+
+The ReadFile function reads data from a file, starting at the
+position indicated by the file pointer.
+
+BOOL ReadFile(
+    HANDLE hFile,
+    LPVOID lpBuffer,
+    DWORD nNumberOfBytesToRead,
+    LPDWORD lpNumberOfBytesRead,
+    LPOVERLAPPED lpOverlapped
+   );
+
+Parameters:
+
+hFile is a handle for the file to be read. The
+file handle must have been created with GENERIC_READ access to the
+file.
+
+lpBuffer points to the buffer that receives the
+data read from the file.
+
+nNumberOfBytesToRead is a dword which specifies
+the number of bytes to be read from the file.
+
+lpNumberOfBytesRead points to the number of bytes
+read. ReadFile sets this value to zero before doing any work or error
+checking. If this parameter is zero when ReadFile returns TRUE on
+a named pipe, the other end of the message-mode pipe called the WriteFile
+function with nNumberOfBytesToWrite set to zero.
+
+lpOverlapped points to an OVERLAPPED structure.
+This structure is required if hFile was created with FILE_FLAG_OVERLAPPED.
+
+Return Values: If the function succeeds, the return
+value is TRUE. If the return value is TRUE and the number of bytes
+read is zero, the file pointer was beyond the current end of the file
+at the time of the read operation. If the function fails, the return
+value is FALSE. To get extended error information, call GetLastError.
+
+
+WriteFile
+=========
+
+The WriteFile function writes data to a file and is designed
+for both synchronous and asynchronous operation.
+
+BOOL WriteFile(
+    HANDLE hFile,
+    LPCVOID lpBuffer,
+    DWORD nNumberOfBytesToWrite,
+    LPDWORD lpNumberOfBytesWritten,
+    LPOVERLAPPED lpOverlapped
+   );
+
+Parameters:
+
+The parameters and return values are essentially the same
+as for ReadFile, except that, of course, now we are writing.
+
+
+GetCurrentDirectory
+===================
+
+The GetCurrentDirectory function retrieves the current directory
+for the current process.
+
+DWORD GetCurrentDirectory(
+    DWORD nBufferLength,
+    LPTSTR lpBuffer
+   );
+
+Parameters:
+
+nBufferLength specifies the length, in characters,
+of the buffer for the current directory string. The buffer length
+must include room for a terminating null character.
+
+lpBuffer points to the buffer for the current directory
+string. This null-terminated string specifies the absolute path to
+the current directory.
+
+Return Value: If the function succeeds, the return
+value specifies the number of characters written to the buffer, not
+including the terminating null character. If the function fails, the
+return value is zero. If the buffer pointed to by lpBuffer
+is not large enough, the return value specifies the required size
+of the buffer, including the number of bytes necessary for a terminating
+null character.
+
+
+SetCurrentDirectory
+===================
+
+The SetCurrentDirectory function changes the current directory
+for the current process.
+
+BOOL SetCurrentDirectory(
+    LPCTSTR lpPathName
+   );
+
+Parameters:
+
+lpPathName points to a null-terminated string that
+specifies the path to the new current directory. This parameter may
+be a relative path or a fully qualified path. In either case, the
+fully qualified path of the specified directory is calculated and
+stored as the current directory.
+
+Return Values: If the function succeeds, the return
+value is TRUE. If the function fails, the return value is FALSE.
+
+
+GetLocalTime
+============
+
+The GetLocalTime function retrieves the current local date
+and time.
+
+VOID GetLocalTime(
+    LPSYSTEMTIME lpSystemTime
+   );
+
+Parameters:
+
+lpSystemTime points to a SYSTEMTIME structure to
+receive the current local date and time. The SYSTEMTIME structure
+represents a date and time using individual members for the month,
+day, year, weekday, hour, minute, second, and millisecond:
+
+typedef struct _SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+} SYSTEMTIME;
+
+Return Value: This function does not return a value.
+
+
+MessageBeep
+===========
+
+The MessageBeep function plays a waveform sound. The waveform
+sound for each sound type is identified by an entry in the [sounds]
+section of the registry.
+
+BOOL MessageBeep(
+    UINT uType   // sound type
+   );
+
+Parameters:
+
+uType specifies the sound type, as identified by
+an entry in the [sounds] section of the registry. This parameter can
+be one of the following values:
+0xFFFFFFFF--standard beep using the computer speaker.
+MB_ICONASTERISK--SystemAsterisk.
+MB_ICONEXCLAMATION--SystemExclamation.
+MB_ICONHAND--SystemHand.
+MB_ICONQUESTION--SystemQuestion.
+MB_OK--SystemDefault.
+
+Return Values: If the function succeeds, the return
+value is TRUE. If the function fails, the return value is FALSE.
+
+

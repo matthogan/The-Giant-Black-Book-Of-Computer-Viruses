@@ -1,0 +1,24 @@
+# sample make file for building vvd virtual device for Windows/386
+
+# comment this definition out with a "#", if building a non-debugging version
+#Debug=-DDEBUG
+
+.asm.obj:
+        masm5 -p -w2 -Mx $(Debug) -I\winddk\include $*;
+
+.asm.lst:
+        masm5 -l -p -w2 -Mx $(Debug) -I\winddk\include $*;
+
+all:    vvd.386
+
+vvd.obj vvd.lst: vvd.asm \winddk\include\dosmgr.inc \winddk\include\shell.inc \
+         \winddk\include\shellfsc.inc \winddk\include\vpicd.inc \winddk\include\debug.inc \
+         \winddk\include\vmm.inc
+
+
+OBJS =  vvd.obj
+
+vvd.386: vvd.def $(OBJS)
+        link386 @vvd.lnk
+        addhdr vvd.386
+        mapsym32 vvd

